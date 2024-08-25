@@ -834,6 +834,16 @@ static int asf_read_header(AVFormatContext *s)
                 work_bitrate = asf->stream_bitrates[i];
             }
             bitrate_default -= work_bitrate;
+            av_log(s, AV_LOG_VERBOSE,
+                   "[%s] compute default bitrate "
+                   " i=%d, stream_num=%d, codec br=%d, stream br=%d\n",
+                   "asf_read_header",
+                   i, stream_num,
+                   st->codecpar->bit_rate,
+                   asf->stream_bitrates[i]);
+            av_log(s, AV_LOG_VERBOSE,
+                   "    bitrate = %d, remaining for default=%d\n",
+                   work_bitrate, bitrate_default);
         }
     }
     if ( bitrate_default <= 0 ) {
