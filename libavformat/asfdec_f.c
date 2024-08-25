@@ -39,6 +39,8 @@
 #include "asf.h"
 #include "asfcrypt.h"
 
+#include "libavcodec/options_table.h"
+
 typedef struct ASFPayload {
     uint8_t type;
     uint16_t size;
@@ -294,6 +296,7 @@ static int asf_read_file_properties(AVFormatContext *s)
 
     av_log(s, AV_LOG_INFO, "asf->hdr.max_bitrate = %d\n",
            asf->hdr.max_bitrate);
+
     return 0;
 }
 
@@ -825,6 +828,13 @@ static int asf_read_header(AVFormatContext *s)
 
             if (!st->codecpar->bit_rate)
                 st->codecpar->bit_rate = asf->stream_bitrates[i];
+            if (!st->codecpar->bit_rate) {
+                st->codecpar->bit_rate = AV_CODEC_DEFAULT_BITRATE;
+                av_log(s, AV_LOG_INFO,
+                       "Set DEFAULT to st->codecpar->bit_rate = %d\n",
+                       st->codecpar->bit_rate);
+            }
+
             if (asf->dar[i].num > 0 && asf->dar[i].den > 0) {
                 av_reduce(&st->sample_aspect_ratio.num,
                           &st->sample_aspect_ratio.den,
