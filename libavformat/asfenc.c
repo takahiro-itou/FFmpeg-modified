@@ -401,6 +401,8 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
             && par->sample_aspect_ratio.num > 0
             && par->sample_aspect_ratio.den > 0)
             has_aspect_ratio++;
+        av_log(s, AV_LOG_INFO, "bit_rate = %d, par->bit_rate = %d\n",
+               bit_rate, par->bit_rate);
 
         entry = av_dict_get(s->streams[n]->metadata, "language", NULL, 0);
         if (entry) {
