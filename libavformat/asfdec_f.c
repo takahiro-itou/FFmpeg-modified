@@ -870,8 +870,9 @@ static int asf_read_header(AVFormatContext *s)
             if (!st->codecpar->bit_rate) {
                 st->codecpar->bit_rate = bitrate_default;
                 av_log(s, AV_LOG_INFO,
-                       "Set DEFAULT to st->codecpar->bit_rate = %d\n",
-                       st->codecpar->bit_rate);
+                       "Set DEFAULT to st->codecpar->bit_rate = %d "
+                       " @ i=%d, stream_num=%d\n",
+                       st->codecpar->bit_rate, i, stream_num);
             }
 
             if (asf->dar[i].num > 0 && asf->dar[i].den > 0) {
