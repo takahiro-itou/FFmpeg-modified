@@ -462,6 +462,12 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
     ff_put_guid(pb, &ff_asf_head2_guid);
     avio_wl16(pb, 6);
     avio_wl32(pb, 0); /* length, to be filled later */
+
+    av_log(s, AV_LOG_VERBOSE,
+           "[%s] asf->nb_languages = %d\n",
+           "asf_write_header1",
+           asf->nb_languages);
+
     if (asf->nb_languages) {
         int64_t hpos2;
         int nb_audio_languages = 0;
@@ -495,8 +501,20 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
 
         for (unsigned n = 0; n < s->nb_streams; n++) {
             int64_t es_pos;
+
+            av_log(s, AV_LOG_VERBOSE,
+                   "[%s], asf->streams[%d].stream_language_index = %d\n",
+                   "asf_write_header1",
+                   n, asf->streams[n].stream_language_index);
+
             if (asf->streams[n].stream_language_index > 127)
                 continue;
+
+            av_log(s, AV_LOG_VERBOSE,
+                   "[%s], s->streams[%d]->codecpar->bit_rate = %d\n",
+                   "asf_write_header1",
+                   n, s->streams[n]->codecpar->bit_rate);
+
             es_pos = put_header(pb, &ff_asf_extended_stream_properties_object);
             avio_wl64(pb, 0); /* start time */
             avio_wl64(pb, 0); /* end time */
