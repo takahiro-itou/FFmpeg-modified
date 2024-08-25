@@ -403,7 +403,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
             has_aspect_ratio++;
 
         av_log(s, AV_LOG_VERBOSE,
-               "[%s] par->bit_rate = %d, bit_rate = %d\n",
+               "[%s] par->bit_rate = %lld, bit_rate = %d\n",
                "asf_write_header1",
                par->bit_rate, bit_rate);
 
@@ -511,7 +511,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
                 continue;
 
             av_log(s, AV_LOG_VERBOSE,
-                   "[%s], s->streams[%d]->codecpar->bit_rate = %d\n",
+                   "[%s], s->streams[%d]->codecpar->bit_rate = %lld\n",
                    "asf_write_header1",
                    n, s->streams[n]->codecpar->bit_rate);
 

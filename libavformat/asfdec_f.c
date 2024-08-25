@@ -295,7 +295,7 @@ static int asf_read_file_properties(AVFormatContext *s)
     s->packet_size       = asf->hdr.max_pktsize;
 
     av_log(s, AV_LOG_VERBOSE,
-           "[%s] asf->hdr.max_bitrate = %d\n",
+           "[%s] asf->hdr.max_bitrate = %u\n",
            "asf_read_file_properties",
            asf->hdr.max_bitrate);
 
@@ -704,7 +704,7 @@ static int asf_read_header(AVFormatContext *s)
     ff_asf_guid g;
     AVIOContext *pb = s->pb;
     int i;
-    int bitrate_default;
+    int64_t bitrate_default;
     int64_t gsize;
 
     ff_get_guid(pb, &g);
@@ -825,32 +825,32 @@ static int asf_read_header(AVFormatContext *s)
     //  この場合は仕方ないので、ファイルプロパティに記録された
     //  総ビットレートからオーディオのビットレートを引いて計算
     bitrate_default = asf->hdr.max_bitrate;
-    for (i = 0; i < 128; ++i) {
+    for ( i = 0; i < 128; i++ ) {
         int stream_num = asf->asfid2avid[i];
         if (stream_num >= 0) {
             const AVStream *st = s->streams[stream_num];
-            int work_bitrate = st->codecpar->bit_rate;
+            int64_t work_bitrate = st->codecpar->bit_rate;
             if ( !work_bitrate ) {
                 work_bitrate = asf->stream_bitrates[i];
             }
             bitrate_default -= work_bitrate;
             av_log(s, AV_LOG_VERBOSE,
                    "[%s] compute default bitrate "
-                   " i=%d, stream_num=%d, codec br=%d, stream br=%d\n",
+                   " i=%d, stream_num=%d, codec br=%lld, stream br=%u\n",
                    "asf_read_header",
                    i, stream_num,
                    st->codecpar->bit_rate,
                    asf->stream_bitrates[i]);
             av_log(s, AV_LOG_VERBOSE,
-                   "    bitrate = %d, remaining for default=%d\n",
+                   "    bitrate = %lld, remaining for default=%lld\n",
                    work_bitrate, bitrate_default);
         }
     }
     if ( bitrate_default <= 0 ) {
         bitrate_default = 0;
     }
-    av_log(s, AV_LOG_VERBOSE,
-           "[%s] bitrate_default = %d\n",
+    av_log(s, AV_LOG_INFO,
+           "[%s] bitrate_default = %lld\n",
            "asf_read_header",
            bitrate_default);
 
@@ -859,9 +859,11 @@ static int asf_read_header(AVFormatContext *s)
         if (stream_num >= 0) {
             AVStream *st = s->streams[stream_num];
             av_log(s, AV_LOG_VERBOSE,
-                   "[%s] st->codecpar->bit_rate = %d,"
-                   " asf->stream_bitrates = %d\n",
+                   "[%s] i=%d, stream_num=%d,"
+                   " st->codecpar->bit_rate = %lld,"
+                   " asf->stream_bitrates = %u\n",
                    "asf_read_header",
+                   i, stream_num,
                    st->codecpar->bit_rate,
                    asf->stream_bitrates[i]);
 
@@ -870,9 +872,9 @@ static int asf_read_header(AVFormatContext *s)
             if (!st->codecpar->bit_rate) {
                 st->codecpar->bit_rate = bitrate_default;
                 av_log(s, AV_LOG_INFO,
-                       "Set DEFAULT to st->codecpar->bit_rate = %d "
-                       " @ i=%d, stream_num=%d\n",
-                       st->codecpar->bit_rate, i, stream_num);
+                       "Set DEFAULT to st->codecpar->bit_rate"
+                       " i=%d, stream_num=%d, value=%lld\n",
+                       i, stream_num,  st->codecpar->bit_rate);
             }
 
             if (asf->dar[i].num > 0 && asf->dar[i].den > 0) {
