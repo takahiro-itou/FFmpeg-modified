@@ -704,6 +704,7 @@ static int asf_read_header(AVFormatContext *s)
     ff_asf_guid g;
     AVIOContext *pb = s->pb;
     int i;
+    int bitrate_default;
     int64_t gsize;
 
     ff_get_guid(pb, &g);
@@ -820,6 +821,29 @@ static int asf_read_header(AVFormatContext *s)
     asf->data_offset      = avio_tell(pb);
     asf->packet_size_left = 0;
 
+    //  ビデオのビットレートが記録されていない場合がある
+    //  この場合は仕方ないので、ファイルプロパティに記録された
+    //  総ビットレートからオーディオのビットレートを引いて計算
+    bitrate_default = asf->hdr.max_bitrate;
+    for (i = 0; i < 128; ++i) {
+        int stream_num = asf->asfid2avid[i];
+        if (stream_num >= 0) {
+            const AVStream *st = s->streams[stream_num];
+            int work_bitrate = st->codecpar->bit_rate;
+            if ( !work_bitrate ) {
+                work_bitrate = asf->stream_bitrates[i];
+            }
+            bitrate_default -= work_bitrate;
+        }
+    }
+    if ( bitrate_default <= 0 ) {
+        bitrate_default = 0;
+    }
+    av_log(s, AV_LOG_VERBOSE,
+           "[%s] bitrate_default = %d\n",
+           "asf_read_header",
+           bitrate_default);
+
     for (i = 0; i < 128; i++) {
         int stream_num = asf->asfid2avid[i];
         if (stream_num >= 0) {
@@ -834,7 +858,7 @@ static int asf_read_header(AVFormatContext *s)
             if (!st->codecpar->bit_rate)
                 st->codecpar->bit_rate = asf->stream_bitrates[i];
             if (!st->codecpar->bit_rate) {
-                st->codecpar->bit_rate = AV_CODEC_DEFAULT_BITRATE;
+                st->codecpar->bit_rate = bitrate_default;
                 av_log(s, AV_LOG_INFO,
                        "Set DEFAULT to st->codecpar->bit_rate = %d\n",
                        st->codecpar->bit_rate);
