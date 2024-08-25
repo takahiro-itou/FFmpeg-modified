@@ -294,7 +294,9 @@ static int asf_read_file_properties(AVFormatContext *s)
     asf->hdr.max_bitrate = avio_rl32(pb);
     s->packet_size       = asf->hdr.max_pktsize;
 
-    av_log(s, AV_LOG_INFO, "asf->hdr.max_bitrate = %d\n",
+    av_log(s, AV_LOG_VERBOSE,
+           "[%s] asf->hdr.max_bitrate = %d\n",
+           "asf_read_file_properties",
            asf->hdr.max_bitrate);
 
     return 0;
@@ -822,9 +824,12 @@ static int asf_read_header(AVFormatContext *s)
         int stream_num = asf->asfid2avid[i];
         if (stream_num >= 0) {
             AVStream *st = s->streams[stream_num];
-            av_log(s, AV_LOG_INFO,
-                   "st->codecpar->bit_rate = %d, asf->stream_bitrates = %d\n",
-                   st->codecpar->bit_rate, asf->stream_bitrates[i]);
+            av_log(s, AV_LOG_VERBOSE,
+                   "[%s] st->codecpar->bit_rate = %d,"
+                   " asf->stream_bitrates = %d\n",
+                   "asf_read_header",
+                   st->codecpar->bit_rate,
+                   asf->stream_bitrates[i]);
 
             if (!st->codecpar->bit_rate)
                 st->codecpar->bit_rate = asf->stream_bitrates[i];
