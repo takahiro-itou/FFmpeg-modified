@@ -757,6 +757,8 @@ static int asf_read_ext_stream_properties(AVFormatContext *s, const GUIDParseTab
         st->codecpar->bit_rate   = bitrate;
         st->avg_frame_rate.num   = 10000000;
         st->avg_frame_rate.den   = time_per_frame;
+        av_log(s, AV_LOG_INFO, "st->codecpar->bit_rate = %d\n",
+               st->codecpar->bit_rate);
     }
     nb_st_name = avio_rl16(pb);
     nb_pay_exts   = avio_rl16(pb);
