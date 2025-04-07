@@ -583,7 +583,7 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
             uint64_t frame_number = atomic_load(&ost->packets_written);
 
             fps = t > 1 ? frame_number / t : 0;
-            av_bprintf(&buf, "frame=%5"PRId64" fps=%3.*f q=%3.1f ",
+            av_bprintf(&buf, "fra=%5"PRId64" fps=%3.*f q=%3.1f ",
                      frame_number, fps < 9.95, fps, q);
             av_bprintf(&buf_script, "frame=%"PRId64"\n", frame_number);
             av_bprintf(&buf_script, "fps=%.2f\n", fps);
@@ -615,20 +615,20 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     bitrate = pts != AV_NOPTS_VALUE && pts && total_size >= 0 ? total_size * 8 / (pts / 1000.0) : -1;
     speed   = pts != AV_NOPTS_VALUE && t != 0.0 ? (double)pts / AV_TIME_BASE / t : -1;
 
-    if (total_size < 0) av_bprintf(&buf, "size=N/A time=");
-    else                av_bprintf(&buf, "size=%8.0fKiB time=", total_size / 1024.0);
+    if (total_size < 0) av_bprintf(&buf, "sz=N/A time=");
+    else                av_bprintf(&buf, "sz=%8.0fKiB time=", total_size / 1024.0);
     if (pts == AV_NOPTS_VALUE) {
         av_bprintf(&buf, "N/A ");
     } else {
-        av_bprintf(&buf, "%s%02"PRId64":%02d:%02d.%02d(%10"PRId64") ",
+        av_bprintf(&buf, "%s%02"PRId64":%02d:%02d.%02d (%10"PRId64") ",
                    hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE, pts);
     }
 
     if (bitrate < 0) {
-        av_bprintf(&buf, "bitrate=N/A");
+        av_bprintf(&buf, "br=N/A");
         av_bprintf(&buf_script, "bitrate=N/A\n");
     }else{
-        av_bprintf(&buf, "bitrate=%6.1fkbits/s", bitrate);
+        av_bprintf(&buf, "br=%6.1fkbits/s", bitrate);
         av_bprintf(&buf_script, "bitrate=%6.1fkbits/s\n", bitrate);
     }
 
@@ -651,10 +651,10 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     av_bprintf(&buf_script, "drop_frames=%"PRId64"\n", nb_frames_drop);
 
     if (speed < 0) {
-        av_bprintf(&buf, " speed=N/A");
+        av_bprintf(&buf, " spd=N/A");
         av_bprintf(&buf_script, "speed=N/A\n");
     } else {
-        av_bprintf(&buf, " speed=%4.3gx", speed);
+        av_bprintf(&buf, " spd=%4.3gx", speed);
         av_bprintf(&buf_script, "speed=%4.3gx\n", speed);
     }
 
