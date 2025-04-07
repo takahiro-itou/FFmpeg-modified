@@ -1582,6 +1582,7 @@ fail:
 int sch_wait(Scheduler *sch, uint64_t timeout_us, int64_t *transcode_ts)
 {
     int ret, err;
+    int64_t last_dts;
 
     // convert delay to absolute timestamp
     timeout_us += av_gettime();
@@ -1598,7 +1599,14 @@ int sch_wait(Scheduler *sch, uint64_t timeout_us, int64_t *transcode_ts)
 
     pthread_mutex_unlock(&sch->mux_done_lock);
 
-    *transcode_ts = atomic_load(&sch->last_dts);
+    last_dts = atomic_load(&sch->last_dts);
+    if ( last_dts < 0 ) {
+        //  なぜかマイナスになるバグがあるので、    //
+        //  仕方なくアトミックアクセスを諦めて、    //
+        //  もう一回だけ数値を読み直してみる。      //
+        last_dts = sch->last_dts;
+    }
+    *transcode_ts = last_dts;
 
     // abort transcoding if any task failed
     err = atomic_load(&sch->task_failed);
