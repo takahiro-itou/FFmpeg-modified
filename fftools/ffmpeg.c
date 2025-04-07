@@ -620,8 +620,8 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     if (pts == AV_NOPTS_VALUE) {
         av_bprintf(&buf, "N/A ");
     } else {
-        av_bprintf(&buf, "%s%02"PRId64":%02d:%02d.%02d ",
-                   hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE);
+        av_bprintf(&buf, "%s%02"PRId64":%02d:%02d.%02d(%10"PRId64") ",
+                   hours_sign, hours, mins, secs, (100 * us) / AV_TIME_BASE, pts);
     }
 
     if (bitrate < 0) {
