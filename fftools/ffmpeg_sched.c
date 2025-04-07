@@ -1582,7 +1582,7 @@ fail:
 int sch_wait(Scheduler *sch, uint64_t timeout_us, int64_t *transcode_ts)
 {
     int ret, err;
-    int64_t last_dts;
+    int64_t last_dts, recalc_dts;
 
     // convert delay to absolute timestamp
     timeout_us += av_gettime();
@@ -1599,12 +1599,15 @@ int sch_wait(Scheduler *sch, uint64_t timeout_us, int64_t *transcode_ts)
 
     pthread_mutex_unlock(&sch->mux_done_lock);
 
+    recalc_dts = trailing_dts(sch, 1);
     last_dts = atomic_load(&sch->last_dts);
-    if ( last_dts < 0 ) {
-        //  なぜかマイナスになるバグがあるので、    //
-        //  仕方なくアトミックアクセスを諦めて、    //
-        //  もう一回だけ数値を読み直してみる。      //
-        last_dts = sch->last_dts;
+    if ( last_dts < (recalc_dts / 2) ) {
+        //  オーバーフローになるバグがある。    //
+        //  別の方法で再計算した値と比較する。  //
+        //  その差が大きい（倍以上ある）時は、  //
+        //  仕方なくアトミックアクセスを諦め、  //
+        //  再計算した方の値を採用する。        //
+        last_dts = recalc_dts;
     }
     *transcode_ts = last_dts;
 
