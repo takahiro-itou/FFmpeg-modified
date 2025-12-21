@@ -536,13 +536,16 @@ void update_benchmark(const char *fmt, ...)
     }
 }
 
-static void print_report(int is_last_report, int64_t timer_start, int64_t cur_time, int64_t pts)
+static void print_report(
+        int is_last_report, int64_t timer_start, int64_t cur_time, int64_t pts,
+        int64_t prv_time, int64_t prv_pts
+)
 {
     AVBPrint buf, buf_script;
     int64_t total_size = of_filesize(output_files[0]);
     int vid;
     double bitrate;
-    double speed;
+    double speed, speed2;
     static int64_t last_time = -1;
     static int first_report = 1;
     uint64_t nb_frames_dup = 0, nb_frames_drop = 0;
@@ -550,7 +553,8 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     int64_t hours;
     const char *hours_sign;
     int ret;
-    float t;
+    float t, t2;
+    int64_t pts2 = pts - prv_pts;
 
     if (!print_stats && !is_last_report && !progress_avio)
         return;
@@ -566,6 +570,7 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     }
 
     t = (cur_time-timer_start) / 1000000.0;
+    t2 = (cur_time - prv_time) / 1000000.0;
 
     vid = 0;
     av_bprint_init(&buf, 0, AV_BPRINT_SIZE_AUTOMATIC);
@@ -613,7 +618,8 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     hours_sign = (pts < 0) ? "-" : "";
 
     bitrate = pts != AV_NOPTS_VALUE && pts && total_size >= 0 ? total_size * 8 / (pts / 1000.0) : -1;
-    speed   = pts != AV_NOPTS_VALUE && t != 0.0 ? (double)pts / AV_TIME_BASE / t : -1;
+    speed   = pts != AV_NOPTS_VALUE && t  != 0.0 ? (double)pts  / AV_TIME_BASE / t  : -1;
+    speed2  = pts != AV_NOPTS_VALUE && t2 != 0.0 ? (double)pts2 / AV_TIME_BASE / t2 : -1;
 
     if (total_size < 0) av_bprintf(&buf, "sz=N/A time=");
     else                av_bprintf(&buf, "sz=%8.0fKiB time=", total_size / 1024.0);
@@ -654,8 +660,8 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
         av_bprintf(&buf, " spd=N/A");
         av_bprintf(&buf_script, "speed=N/A\n");
     } else {
-        av_bprintf(&buf, " spd=%4.3gx", speed);
-        av_bprintf(&buf_script, "speed=%4.3gx\n", speed);
+        av_bprintf(&buf, " spd=%4.3g(%4.3g)x", speed, speed2);
+        av_bprintf(&buf_script, "speed=%4.3g(%4.3g)x\n", speed, speed2);
     }
 
     if (print_stats || is_last_report) {
@@ -840,6 +846,7 @@ static int transcode(Scheduler *sch)
 {
     int ret = 0;
     int64_t timer_start, transcode_ts = 0;
+    int64_t prv_time, prv_pts = 0;
 
     print_stream_maps();
 
@@ -854,6 +861,8 @@ static int transcode(Scheduler *sch)
     }
 
     timer_start = av_gettime_relative();
+    prv_pts = 0;
+    prv_time = timer_start;
 
     while (!sch_wait(sch, stats_period, &transcode_ts)) {
         int64_t cur_time= av_gettime_relative();
@@ -864,7 +873,9 @@ static int transcode(Scheduler *sch)
                 break;
 
         /* dump report by using the output first video and audio streams */
-        print_report(0, timer_start, cur_time, transcode_ts);
+        print_report(0, timer_start, cur_time, transcode_ts, prv_time, prv_pts);
+        prv_time = cur_time;
+        prv_pts  = transcode_ts;
     }
 
     ret = sch_stop(sch, &transcode_ts);
@@ -878,7 +889,8 @@ static int transcode(Scheduler *sch)
     term_exit();
 
     /* dump report by using the first video and audio streams */
-    print_report(1, timer_start, av_gettime_relative(), transcode_ts);
+    print_report(1, timer_start, av_gettime_relative(), transcode_ts,
+                 prv_time, prv_pts);
 
     return ret;
 }
